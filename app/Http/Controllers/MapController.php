@@ -63,7 +63,6 @@ class MapController extends Controller
         }else{
             $sql="SELECT * FROM getLatestPtd() WHERE ID IN($ptd_id)";
         }
-
         // $data = DB::select("SELECT * FROM ptd_latlong");
         $data = DB::select($sql);
         return response()->json($data);
@@ -146,7 +145,28 @@ class MapController extends Controller
     public function getRoadSegmentPTDs($ptd)
     {
         $ptd_ex=explode('_', $ptd);
-        $sql="SELECT * FROM getRoadSegment() WHERE id IN($ptd_ex[0]) ORDER BY RouteNumber";
+        $sql="
+            SELECT 
+            a.*, ISNULL(ROUND(AVGSpeedSegment,0,0),0) AS AVGSpeedSegment
+            FROM(
+            SELECT * 
+            FROM getRoadSegment() 
+            WHERE id IN($ptd_ex[0]) 
+            ) a
+            LEFT JOIN
+            (
+                SELECT DISTINCT PTDName,RoadSegment,AVGSpeedSegment FROM
+
+                (
+                SELECT 
+                    DENSE_RANK() OVER(PARTITION BY PTDName ORDER BY TrDate DESC) rn,
+                    * FROM ptdActual
+                WHERE IsMostPassed=1 
+                ) a WHERE rn=1
+            ) b
+            ON a.PTD=b.PTDName AND a.RoadSegment=b.RoadSegment
+            ORDER BY RouteNumber
+        ";
         $data = DB::select($sql);
         $status=1;        
         if (count(explode(',',$ptd_ex[0]))>1) {
@@ -167,7 +187,7 @@ class MapController extends Controller
     } 
     public function getRoadSegmentMaster(Request $request)
     {
-        $sql="SELECT RoadSegment,RoadDetailSegment,CONVERT(DECIMAL(16,8),latitude) AS latitude,CONVERT(DECIMAL(16,8),longitude) AS longitude,ISNULL(Elevasi,0) AS Elevasi FROM header WHERE Latitude IS NOT NULL  AND Longitude IS NOT NULL  GROUP BY RoadSegment,RoadDetailSegment,latitude,longitude,Elevasi";
+        $sql="SELECT RoadSegment,RoadDetailSegment,CONVERT(DECIMAL(16,8),latitude) AS latitude,CONVERT(DECIMAL(16,8),longitude) AS longitude,ISNULL(Elevasi,0) AS Elevasi,RouteX,RouteY FROM header WHERE Latitude IS NOT NULL  AND Longitude IS NOT NULL  GROUP BY RoadSegment,RoadDetailSegment,latitude,longitude,Elevasi,RouteX,RouteY";
         $data = DB::select($sql);
         $r['data'] = $data;
         $r['func'] = 'loadRoadSegmentMaster';
@@ -248,7 +268,7 @@ class MapController extends Controller
                 'BudgetSpeedAVG'    => $avg,
             ];
         }, $norm);
-
+        
         DB::beginTransaction();
         try {
             if ($ptd && $date) {
@@ -285,7 +305,6 @@ class MapController extends Controller
     {
        $id_ptdActual = $request->id;
         $nowDate      = Carbon::now('Asia/Singapore')->toDateString();
-
         try {
             DB::beginTransaction();
 
@@ -300,8 +319,8 @@ class MapController extends Controller
 
             // Insert new row(s)
             $insertSql = "
-                INSERT INTO header ([SiteId], [Date], [PTD], [RoadSegment], RoadDetailSegment, [RouteNumber], [Latitude], [Longitude])
-                SELECT ?, ?, REPLACE(PTDName,'Via','From') AS PTDName, RoadSegment, Waypoint, RouteNumber, Latitude, Longitude
+                INSERT INTO header ([SiteId], [Date], [PTD], [RoadSegment], RoadDetailSegment, [RouteNumber],RouteX,RouteY, [Latitude], [Longitude])
+                SELECT ?, ?, REPLACE(PTDName,'Via','From') AS PTDName, RoadSegment, Waypoint, RouteNumber,Routex,RouteY, Latitude, Longitude
                 FROM ptdActual WHERE id = ?
             ";
             $inserted = DB::affectingStatement($insertSql, [2010, $nowDate, $id_ptdActual]);
@@ -421,6 +440,7 @@ class MapController extends Controller
         return $out;
     }
 
+  
 
 
 }

@@ -42,7 +42,7 @@ Route::get('/api/getRoadSegmentPlan', [MapController::class, 'getRoadSegmentPlan
 
 
 
-Route::redirect('/', '/mapTilerRadius');
+Route::redirect('/', '/ptdMasterSetUp');
 
 
 // END CRUD

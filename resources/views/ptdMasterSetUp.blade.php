@@ -174,7 +174,7 @@ body.dark-mode .leaflet-tooltip.route-num-label{ background:rgba(0,0,0,.75); }
 
 
   const distinctColors = ['blue','orange','purple','violet','grey','black','yellow','pink','brown'];
-  const markerIconUrl  = c => `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${c}.png`;
+  const markerIconUrl  = c => `https://appdevbumaidsta001.blob.core.windows.net/map-mhr/images/marker-icon-${c}.png`;
   const fmtDistance    = m => !Number.isFinite(m) ? '-' : (m>=1000 ? (m/1000).toFixed(2)+' km' : Math.round(m)+' m');
 
   let plannedTotalMetersGlobal = 0;
@@ -197,7 +197,7 @@ let lblBtn=null, numBtn=null;
 /* ==========================================
    ===============  MAP SETUP  ==============
    ========================================== */
-   const map = L.map('map',{ center:[-2.22422,115.493], zoom:13, doubleClickZoom:false, minZoom: 13,   // <-- min zoom out
+   const map = L.map('map',{ center:[-2.22422,115.493], zoom:14, doubleClickZoom:false, minZoom: 14,   // <-- min zoom out
     maxZoom: 18 });
    // const baseTileLayer = L.tileLayer('/map/{z}/{x}/{y}.jpg',{
      const baseTileLayer = L.tileLayer('https://appdevbumaidsta001.blob.core.windows.net/map-mhr/{z}/{x}/{y}.jpg',{
@@ -340,7 +340,7 @@ L.DomEvent.on(a,'click',L.DomEvent.stop).on(a,'mousedown',L.DomEvent.stop).on(a,
       const color = distinctColors[idx % distinctColors.length];
       let totalMeters=0;
       dataSaveAble = sorted;
-    // console.log(dataSaveAble)
+    // console.log(sortable)
     // SEGMENTS
     for(let i=0;i<sorted.length-1;i++){
       const a=sorted[i], b=sorted[i+1];
@@ -698,34 +698,113 @@ if(window.L && L.LayerGroup && !L.LayerGroup.prototype.bringToFront){
    ===     ADD NEW POINT BUTTON        ======
    ========================================== */
    $('#newPoint').on('click', function () {
-  const newSegment = $('#RoadSegmentPlan').val(); // use the Select2 value
-  const newlat = $('#lat').val();
-  const newlong = $('#lng').val();
-  const WaypointNew = $('#WaypointNew').val();
+    const newSegment = $('#RoadSegmentPlan').val(); // use the Select2 value
+    const newlat = $('#lat').val();
+    const newlong = $('#lng').val();
+    const WaypointNew = $('#WaypointNew').val();
+    const RouteX = lonLatToLocal(newlat, newlong)[0];
+    const RouteY = lonLatToLocal(newlat, newlong)[1];
 
 
-  if (newSegment && newlat && newlong) {
-    $('#roadSegmentList tbody').append(`
-      <tr style="text-align:center">
-      <td>${newSegment}</td>
-      <td>0</td>
-      <td>${newlong}</td>
-      <td>${newlat}</td>
-      <td>0</td>
-      <td>${WaypointNew}</td>
-      <td>0</td>
-      <td>0</td>
-      <td>0</td>
-      <td>0</td>
-      <td><i class="lni lni-trash-can delete-row" style="color:red; cursor:pointer;"></i></td>
-      </tr>
-      `);
+    if (newSegment && newlat && newlong) {
+      $('#roadSegmentList tbody').append(`
+        <tr style="text-align:center">
+        <td>${newSegment}</td>
+        <td>0</td>
+        <td>${newlong}</td>
+        <td>${newlat}</td>
+        <td>0</td>
+        <td>${WaypointNew}</td>
+        <td>0</td>
+        <td>0</td>
+        <td>0</td>
+        <td>0</td>
+        <td>0</td>
+        <td><i class="lni lni-trash-can delete-row" style="color:red; cursor:pointer;"></i></td>
+        <td style="display:none">${RouteX}</td>
+        <td style="display:none">${RouteY}</td>
+        </tr>
+        `);
 
-    loadTableMarkers();
-    computeTableDistances();
-  }else{
-    alert('please check blank values');
-  }
-});
+      loadTableMarkers();
+      computeTableDistances();
+    }else{
+      alert('please check blank values');
+    }
+  });
+
+
+  // ====== Konversi Lon/Lat -> X/Y (tanpa library) ======
+function lonLatToLocal(latitude, longitude) {
+  if (latitude == null || longitude == null) return [null, null];
+
+  // 1) Titik referensi: [X_lokal, Y_lokal, Longitude, Latitude]
+  const ref = [
+    [2504.477,  1402.915, 115.44863162, -2.22267053], // REF_POINT_01
+    [2504.477, 12328.705, 115.53130066, -2.16931905], // REF_POINT_02
+    [11895.233,12328.705, 115.57688778, -2.24079928], // REF_POINT_03
+    [11895.233, 1402.915, 115.49421296, -2.29415172], // REF_POINT_04
+    [7059.458,  6827.898, 115.51179001, -2.23085250], // REF_POINT_05
+  ];
+
+  // 2) Bangun matriks X (dengan intercept) dan target y (untuk X_lokal & Y_lokal)
+  const X = ref.map(r => [1, r[2], r[3]]);  // [1, Lon, Lat]
+  const yX = ref.map(r => [r[0]]);          // target X_lokal
+  const yY = ref.map(r => [r[1]]);          // target Y_lokal
+
+  // 3) Helper matriks
+  const transpose = m => m[0].map((_, j) => m.map(row => row[j]));
+  const multiply = (a, b) => {
+    const res = Array(a.length).fill(0).map(() => Array(b[0].length).fill(0));
+    for (let i = 0; i < a.length; i++) {
+      for (let k = 0; k < a[0].length; k++) {
+        const aik = a[i][k];
+        for (let j = 0; j < b[0].length; j++) res[i][j] += aik * b[k][j];
+      }
+    }
+    return res;
+  };
+  const inverse3x3 = m => {
+    const [a,b,c] = m[0], [d,e,f] = m[1], [g,h,i] = m[2];
+    const A =  (e*i - f*h);
+    const B = -(d*i - f*g);
+    const C =  (d*h - e*g);
+    const D = -(b*i - c*h);
+    const E =  (a*i - c*g);
+    const F = -(a*h - b*g);
+    const G =  (b*f - c*e);
+    const H = -(a*f - c*d);
+    const I =  (a*e - b*d);
+    const det = a*A + b*B + c*C;
+    if (Math.abs(det) < 1e-12) return null;
+    const inv = 1 / det;
+    return [
+      [A*inv, D*inv, G*inv],
+      [B*inv, E*inv, H*inv],
+      [C*inv, F*inv, I*inv],
+    ];
+  };
+  const solveBeta = (X, y) => {
+    const XT = transpose(X);
+    const XTX = multiply(XT, X);          // 3x3
+    const XTy = multiply(XT, y);          // 3x1
+    const inv = inverse3x3(XTX);
+    if (!inv) return null;
+    const beta = multiply(inv, XTy);      // 3x1
+    return [beta[0][0], beta[1][0], beta[2][0]]; // [intercept, bLon, bLat]
+  };
+
+  // 4) Hitung koefisien regresi
+  const betaX = solveBeta(X, yX);
+  const betaY = solveBeta(X, yY);
+  if (!betaX || !betaY) throw new Error('Matrix singular: titik referensi tidak cukup bervariasi.');
+
+  // 5) Prediksi
+  const xLocal = betaX[0] + betaX[1] * longitude + betaX[2] * latitude;
+  const yLocal = betaY[0] + betaY[1] * longitude + betaY[2] * latitude;
+  return [xLocal.toFixed(2), yLocal.toFixed(2)];
+}
+
+
 </script>
 @endpush

@@ -114,7 +114,7 @@
                         RoadSegment: $cells.eq(0).text().trim(),
                         Waypoints: $cells.eq(5).text().trim(),
                         RouteNumber: i,
-                        RouteX: 0, RouteY: 0,
+                        RouteX: parseFloat($cells.eq(12).text().trim()), RouteY: parseFloat($cells.eq(13).text().trim()),
                         Latitude: parseFloat($cells.eq(3).text().trim()),  
                         Longitude: parseFloat($cells.eq(2).text().trim()),
                         Status: "Good",
@@ -124,6 +124,7 @@
                         BudgetSpeedEmpty: parseFloat($cells.eq(7).text().trim()),
                         BudgetSpeedLoaded: parseFloat($cells.eq(8).text().trim()),
                         BudgetSpeedAVG: parseFloat($cells.eq(9).text().trim()),
+                        AVGSpeedSegment: parseFloat($cells.eq(10).text().trim()),
                         LoadUtcDate: "2025-07-28 01:50:28.870",
                         CreateDate: "2025-07-28 08:50:28.9200000",
                         ModifDate: null
@@ -187,10 +188,10 @@
             <div class="tableFixHead" style="max-height:350px;">
                 <table class="table table-bordered table-striped table-sm mb-0" id="roadSegmentList">
                     <colgroup>
-                        <col style="width:180px"><col style="width:130px"><col style="width:140px">
+                        <col style="width:300px"><col style="width:130px"><col style="width:140px">
                         <col style="width:160px"><col style="width:130px"><col style="width:300px">
                         <col style="width:120px"><col style="width:110px"><col style="width:110px">
-                        <col style="width:110px"><col style="width:60px">
+                        <col style="width:110px"><col style="width:100px"><col style="width:60px"> 
                     </colgroup>
 
                     <thead class="thead-dark">
@@ -205,7 +206,10 @@
                             <th>B.S.Empty</th>
                             <th>B.S.Loaded</th>
                             <th>B.S.Avg</th>
+                            <th>A.Speed</th>
                             <th>#</th>
+                            <th style="display: none;">RouteX</th>
+                            <th style="display: none;">RouteY</th>
                         </tr>
                     </thead>
 
@@ -222,7 +226,10 @@
                                 <td><?= $value->BudgetSpeedEmpty ?></td>
                                 <td><?= $value->BudgetSpeedLoaded ?></td>
                                 <td><?= $value->BudgetSpeedAVG ?></td>
+                                <td><?= $value->AVGSpeedSegment ?></td>
                                 <td><i class="lni lni-trash-can delete-row" style="color:red; cursor:pointer;"></i></td>
+                                <td style="display: none;">{{round($value->RouteX,2)}}</td>
+                                <td style="display: none;">{{round($value->RouteY,2)}}</td>
                             </tr>
                         <?php endforeach ?>
                     </tbody>
@@ -363,6 +370,10 @@
                         <div class="col-md-3">
                             <label class="form-label mb-0">Distance</label>
                             <div id="infoDistance" class="form-control-plaintext"></div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label mb-0">AvgActual</label>
+                            <div id="infoAvgActual" class="form-control-plaintext"></div>
                         </div>
                     </div>
 
@@ -689,6 +700,7 @@ function isValidNum(s) {
 
         $('#bsEmpty').val($td.eq(7).text().trim()).removeClass('is-invalid');
         $('#bsLoaded').val($td.eq(8).text().trim()).removeClass('is-invalid');
+        $('#infoAvgActual').text($td.eq(10).text().trim());
 
         $('#__bsRowIndex').val($row.index());
 
@@ -736,6 +748,8 @@ function isValidNum(s) {
                 <th>Latitude</th>
                 <th>Longitude</th>
                 <th>Elevasi</th>
+                <th style="display: none;">RouteX</th>
+                <th style="display: none;">RouteY</th>
             </tr>
         </thead>
         <tbody>
@@ -747,6 +761,8 @@ function isValidNum(s) {
                     <td><?= $value->latitude ?></td>
                     <td><?= $value->longitude ?></td>
                     <td><?= $value->Elevasi ?></td>
+                    <td style="display: none;">{{$value->RouteX}}</td>
+                    <td style="display: none;">{{$value->RouteY}}</td>
                 </tr>
             <?php endforeach ?>
         </tbody>
@@ -764,6 +780,8 @@ function isValidNum(s) {
                     const latitude = $row.find('td:eq(3)').text().trim();
                     const longitude = $row.find('td:eq(4)').text().trim();
                     const elevasi = $row.find('td:eq(5)').text().trim();
+                    const RouteX = $row.find('td:eq(6)').text().trim();
+                    const RouteY = $row.find('td:eq(7)').text().trim();
 
                     const exists = $('#roadSegmentList tbody tr').filter(function () {
                         return $(this).find('td:eq(0)').text().trim() === segment;
@@ -784,7 +802,10 @@ function isValidNum(s) {
                             <td>0</td>
                             <td>0</td>
                             <td>0</td>
+                            <td>0</td>
                             <td><i class="lni lni-trash-can delete-row" style="color:red; cursor:pointer;"></i></td>
+                            <td style="display:none">${RouteX}</td>
+                            <td style="display:none">${RouteY}</td>
                             </tr>
                             `);
                     }
