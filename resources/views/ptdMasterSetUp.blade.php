@@ -164,17 +164,18 @@ body.dark-mode .leaflet-tooltip.route-num-label{ background:rgba(0,0,0,.75); }
 /* ==========================================
    ============  CONFIG & HELPERS  ==========
    ========================================== */
-   const API = {
+  const API = {
     ptds   : '/api/ptds',
     planned: function(id){ return '/api/markersDB/' + encodeURIComponent(id); },
     actual : function(id){ return '/api/markersActual/' + encodeURIComponent(id); },
     rs     : function(arg){ return '/api/getRoadSegmentPTDs/' + arg; },
     rsp    : '/api/getRoadSegmentPlan'
   };
+  const BLOB_BASE_URL = @json(config('services.blob.base_url'));
 
 
   const distinctColors = ['blue','orange','purple','violet','grey','black','yellow','pink','brown'];
-  const markerIconUrl  = c => `https://appdevbumaidsta001.blob.core.windows.net/map-mhr/images/marker-icon-${c}.png`;
+  const markerIconUrl  = c => `${BLOB_BASE_URL}/map-mhr/images/marker-icon-${c}.png`;
   const fmtDistance    = m => !Number.isFinite(m) ? '-' : (m>=1000 ? (m/1000).toFixed(2)+' km' : Math.round(m)+' m');
 
   let plannedTotalMetersGlobal = 0;
@@ -200,7 +201,7 @@ let lblBtn=null, numBtn=null;
    const map = L.map('map',{ center:[-2.22422,115.493], zoom:14, doubleClickZoom:false, minZoom: 14,   // <-- min zoom out
     maxZoom: 18 });
    // const baseTileLayer = L.tileLayer('/map/{z}/{x}/{y}.jpg',{
-     const baseTileLayer = L.tileLayer('https://appdevbumaidsta001.blob.core.windows.net/map-mhr/{z}/{x}/{y}.jpg',{
+     const baseTileLayer = L.tileLayer(`${BLOB_BASE_URL}/map-mhr/{z}/{x}/{y}.jpg`,{
       attribution:'&copy; BukitMakmur & contributors', tileSize:512, zoomOffset:-1, opacity:.8
     }).addTo(map);
 

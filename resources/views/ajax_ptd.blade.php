@@ -264,6 +264,7 @@
                             <td>Route</td>
                             <td>Route Frekuensi</td>
                             <td>Jumlah Loader</td>
+                            <td>Loader</td>
                             <td>Action</td>
                         </tr>
                     </thead>
@@ -280,9 +281,10 @@
                                 <td><i class="lni lni-information detail-row" style="color:red; cursor:pointer;"></i></td>
                                 <td> <?=$keyPtdRoute+1 ?></td>
                                 <td><?=$valuePtdRoute->Date ?></td>
-                                <td><?=$result ?></td>
+                                <td><?=$result ?></td>-
                                 <td style="text-align: center;"><?=number_format($valuePtdRoute->MostRoute,0) ?></td>
                                 <td style="text-align: center;"><?=number_format($valuePtdRoute->JumlahLoader,0) ?></td>
+                                <td style="text-align: center;"><?=$valuePtdRoute->Loader ?></td>
                                 <td style="text-align: center;">
                                     <button data-id="<?=$valuePtdRoute->id ?>" class="btn btn-success btn-sm save-actual-plan">Apply</button>
                                 </td>

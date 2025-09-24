@@ -174,7 +174,7 @@ class MapController extends Controller
             $status=0;
         }
 
-        $sqlActual="SELECT * FROM GetPTDActual() WHERE REPLACE(PtdName,'Via','From')='".$ptd_ex[1]."' ORDER BY MostRoute DESC";
+        $sqlActual="SELECT TOP 3 id,TrDate AS Date, WayPoint AS RoadSegment, mostRoute AS MostRoute, JumlahLoader,Loader FROM MHR_F_Opseng_ADT_Apps_LatestRoutePTDActualSummary WHERE REPLACE(PtdName,'Via','From')='".$ptd_ex[1]."' ORDER BY MostRoute DESC";
         // echo $sqlActual;
         $dataActual = DB::select($sqlActual);
 

@@ -29,5 +29,8 @@ return [
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
+    'blob' => [
+        'base_url' => env('BLOB_BASE_URL', 'https://appdevbumaidsta001.blob.core.windows.net'),
+    ],
 
 ];
